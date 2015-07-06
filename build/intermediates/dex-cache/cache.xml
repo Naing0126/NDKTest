@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="C:\Users\User\AndroidStudioProjects\NDKTest\app\build\intermediates\exploded-aar\com.android.support\support-v4\22.2.0\jars\libs\internal_impl-22.2.0.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="57f2ab85c164ff1676ec64dee787981c046fab79">
+        <dex dex="C:\Users\User\AndroidStudioProjects\NDKTest\app\build\intermediates\pre-dexed\debug\internal_impl-22.2.0-4273cf4a6c8d29303e0f2c1c0349286b422065a7.jar" />
+    </item>
+    <item
+        jar="C:\Users\User\AndroidStudioProjects\NDKTest\app\build\intermediates\exploded-aar\NDKTest\openCVLibrary2411\unspecified\jars\classes.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="a5bdb4f6415182274887e06edc7997cf8c034f1f">
+        <dex dex="C:\Users\User\AndroidStudioProjects\NDKTest\app\build\intermediates\pre-dexed\debug\classes-1b7b816c08de0b60ed679d1412658c505cb37918.jar" />
+    </item>
+    <item
+        jar="C:\Users\User\AndroidStudioProjects\NDKTest\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\22.2.0\jars\classes.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="73753982da6bde518f3a4c6b372749981d14d1a0">
+        <dex dex="C:\Users\User\AndroidStudioProjects\NDKTest\app\build\intermediates\pre-dexed\debug\classes-43cf81a82734182cd5acdc075f345c3d3614eecd.jar" />
+    </item>
+    <item
+        jar="C:\Users\User\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\22.2.0\support-annotations-22.2.0.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="66b42a1f3eb7676070b7ef7f14b603483aecbee1">
+        <dex dex="C:\Users\User\AndroidStudioProjects\NDKTest\app\build\intermediates\pre-dexed\debug\support-annotations-22.2.0-753a592154c6f989ecbdb6aa99706ea004b02667.jar" />
+    </item>
+    <item
+        jar="C:\Users\User\AndroidStudioProjects\NDKTest\app\build\intermediates\exploded-aar\com.android.support\support-v4\22.2.0\jars\classes.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="1ee588ff2c4daf7b97c1cbf922a6c7f027285c2f">
+        <dex dex="C:\Users\User\AndroidStudioProjects\NDKTest\app\build\intermediates\pre-dexed\debug\classes-cdc50049c1171856606e04fc2ab306e40616aa61.jar" />
+    </item>
+
+</items>
