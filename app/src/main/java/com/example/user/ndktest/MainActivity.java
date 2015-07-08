@@ -11,6 +11,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -27,6 +28,7 @@ public class MainActivity extends Activity {
     private Context mContext = this;
     private Camera mCamera;
     private CameraPreview mPreview;
+    private FaceDetectorView mDetectView;
 
     static{
         try {
@@ -49,38 +51,11 @@ public class MainActivity extends Activity {
 //        TextView view = (TextView) findViewById(R.id.textView);
 //        view.setText("result is "+getMatHeight(50,10));
 
-
-        mContext = this;
-
-        if(checkCameraHardware(mContext)){
-            mCamera = getCameraInstance();
-
-            mPreview = new CameraPreview(this, mCamera);
-            FrameLayout preview = (FrameLayout)findViewById(R.id.cameraPreview);
-            preview.addView(mPreview);
-        }
+        mPreview = (CameraPreview) findViewById(R.id.cameraPreview);
+        mDetectView = (FaceDetectorView) findViewById(R.id.detectView);
+        mPreview.setDetectedView(mDetectView);
     }
 
-    private boolean checkCameraHardware(Context context) {
-        if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)){
-            Log.i(TAG, "Number of available camera : "+Camera.getNumberOfCameras());
-            return true;
-        } else {
-            Toast.makeText(context, "No camera found!", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-    }
-
-    public static Camera getCameraInstance(){
-        Camera c = null;
-        try {
-            c = Camera.open();
-        }
-        catch (Exception e){
-            // using or disable
-        }
-        return c;
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

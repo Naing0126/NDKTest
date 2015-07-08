@@ -2,18 +2,26 @@ package com.example.user.ndktest;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Rect;
 import android.hardware.Camera;
+import android.hardware.camera2.params.Face;
 import android.media.FaceDetector;
+import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Naing on 2015-07-06.
@@ -24,11 +32,23 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private SurfaceHolder mHolder;
     private Camera mCamera;
     private Activity mActivity;
+    private FaceDetectorView mDetectedView;
 
-    public CameraPreview(Context context, Camera camera){
+    public CameraPreview(Context context){
         super(context);
+
+    }
+
+    public CameraPreview(Context context, AttributeSet attrs) {
+        super(context, attrs);
+
         mActivity = (Activity)context;
-        mCamera = camera;
+        if(checkCameraHardware(context)){
+            mCamera = getCameraInstance();
+        }
+
+
+        //mDetectedView = new FaceDetectorView(context);
 
         mHolder = getHolder();
         mHolder.addCallback(this);
@@ -52,6 +72,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         setMeasuredDimension(width, height);
     }
 
+    public void setDetectedView(FaceDetectorView view){
+        mDetectedView = view;
+    }
+
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
     // preview를 holder로 받은 SurfaceHolder에 뿌려준다
@@ -62,8 +86,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
             mCamera.setPreviewDisplay(holder);
             mCamera.startPreview();
-
-            mCamera.setFaceDetectionListener(new MyFaceDetectionListener());
 
             startFaceDetection();
 
@@ -82,10 +104,46 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         if (mCamera != null) {
+            mCamera.stopFaceDetection();
             mCamera.stopPreview();
             mCamera.release();
             mCamera = null;
         }
+    }
+
+    private boolean checkCameraHardware(Context context) {
+        if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)){
+            Log.i(TAG, "Number of available camera : "+Camera.getNumberOfCameras());
+            return true;
+        } else {
+            Toast.makeText(context, "No camera found!", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+    }
+
+    private static int findFrontFacingCamera(){
+        int cameraId = -1;
+        int numberOfCameras = Camera.getNumberOfCameras();
+        for(int i = 0;i<numberOfCameras;i++){
+            Camera.CameraInfo info = new Camera.CameraInfo();
+            Camera.getCameraInfo(i,info);
+            if(info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT){
+                cameraId = i;
+                break;
+            }
+        }
+        return cameraId;
+    }
+
+    public static Camera getCameraInstance(){
+        Camera c = null;
+        try {
+            c = Camera.open(findFrontFacingCamera());
+        }
+        catch (Exception e){
+            // using or disable
+        }
+        return c;
     }
 
     private void setCameraDisplayOrientation(Activity activity){
@@ -116,23 +174,29 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public void startFaceDetection(){
         // Try starting Face Detection
         Camera.Parameters params = mCamera.getParameters();
-
+        Log.d(TAG,"# of Faces is " +params.getMaxNumDetectedFaces());
         // start face detection only *after* preview has started
         if (params.getMaxNumDetectedFaces() > 0){
             // camera supports face detection, so can start it:
+            mCamera.setFaceDetectionListener(faceDetectionListener);
             mCamera.startFaceDetection();
         }
     }
-}
 
-class MyFaceDetectionListener implements Camera.FaceDetectionListener{
-
-    @Override
-    public void onFaceDetection(Camera.Face[] faces, Camera camera) {
-        if (faces.length > 0){
-            Log.d("FaceDetection", "face detected: "+ faces.length +
-                    " Face 1 Location X: " + faces[0].rect.centerX() +
-                    "Y: " + faces[0].rect.centerY() );
+    private Camera.FaceDetectionListener faceDetectionListener = new Camera.FaceDetectionListener() {
+        @Override
+        public void onFaceDetection(Camera.Face[] faces, Camera camera) {
+            if (faces.length > 0){
+                //Log.d(TAG, "face detected: " + faces.length);
+                mDetectedView.setFaces(faces);
+                mDetectedView.invalidate();
+            }else {
+                Log.d(TAG, "No faces detected");
+                //faces = null;
+                //mDetectedView.setFaces(faces);
+                mDetectedView.invalidate();
+            }
         }
-    }
+    };
 }
+

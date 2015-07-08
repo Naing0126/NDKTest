@@ -1,4 +1,4 @@
-<LinearLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:opencv="http://schemas.android.com/apk/res-auto"
@@ -8,11 +8,14 @@
     tools:context=".MainActivity"
     android:weightSum="1">
 
-    <FrameLayout
+    <com.example.user.ndktest.CameraPreview
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/cameraPreview"
-        android:layout_gravity="center_horizontal" />
+        android:id="@+id/cameraPreview" />
 
+    <com.example.user.ndktest.FaceDetectorView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/detectView" />
 
-</LinearLayout>
+</FrameLayout>
