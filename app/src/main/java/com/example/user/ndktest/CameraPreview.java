@@ -3,25 +3,16 @@ package com.example.user.ndktest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
-import android.graphics.Rect;
 import android.hardware.Camera;
-import android.hardware.camera2.params.Face;
 import android.media.FaceDetector;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by Naing on 2015-07-06.
@@ -191,7 +182,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                 mDetectedView.setFaces(faces);
                 mDetectedView.invalidate();
             }else {
-                Log.d(TAG, "No faces detected");
+                //Log.d(TAG, "No faces detected");
                 //faces = null;
                 //mDetectedView.setFaces(faces);
                 mDetectedView.invalidate();

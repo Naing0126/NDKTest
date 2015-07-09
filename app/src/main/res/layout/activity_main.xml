@@ -16,6 +16,7 @@
     <com.example.user.ndktest.FaceDetectorView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/detectView" />
+        android:id="@+id/detectView"
+        android:clickable="true"/>
 
 </FrameLayout>
