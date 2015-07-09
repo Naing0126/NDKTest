@@ -103,25 +103,21 @@ public class FaceDetectorView extends View {
     }
 
     public boolean onTouchEvent(MotionEvent event){
-        // 현재의 터치 액션의 종류를 받아온다.
+        // get touch action
         int action = event.getAction();
-        // 터치 된 x좌표
+        // touched x
         float x = event.getX();
-        // 터치 된 y좌표
+        // touched y
         float y = event.getY();
-        // 액션의 종류에 따른 역할 수행
+
         switch (action) {
-            // 드래그 되었을 때의 이벤트 처리
             case MotionEvent.ACTION_UP:
-                //DRAW_FLAG = true;
                 mPaint.setColor(Color.GREEN);
                 mPaint.setAlpha(128);
-                //this.invalidate();
                 Log.d("touchEvent", "Up");
                 break;
             case MotionEvent.ACTION_DOWN:
                 if (mRect.contains((int)x,(int)y)==true) {
-                    //DRAW_FLAG = false;
                     mFaces=null;
                     Log.d("touchEvent","Hit!!!!!!!!1");
 
@@ -130,8 +126,6 @@ public class FaceDetectorView extends View {
                 }
                 break;
             case MotionEvent.ACTION_MOVE :
-                // 터치 좌표가 이미지 안에 들어와 있다면 드래그 된 만큼 이미지의 좌표도 이동시킨다.
-                // DRAW_FLAG = false;
                 if (mRect.contains((int)x,(int)y)==true) {
                     int length = event.getHistorySize();
 

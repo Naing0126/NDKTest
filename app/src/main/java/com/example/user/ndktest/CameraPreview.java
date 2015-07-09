@@ -69,9 +69,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-    // preview를 holder로 받은 SurfaceHolder에 뿌려준다
         try {
-            Camera.Parameters parameters = mCamera.getParameters();
 
             setCameraDisplayOrientation(mActivity);
 
@@ -83,8 +81,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         } catch (IOException e) {
             Log.d(TAG, "Error setting camera preview: " + e.getMessage());
         }
-
-        FaceDetector.Face[] faces = new FaceDetector.Face[10];
 
     }
 
@@ -142,7 +138,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         int rotation = activity.getWindowManager().getDefaultDisplay()
                 .getRotation();
         Camera.CameraInfo info = new Camera.CameraInfo();
-        // default camera id is 0 (default : 카메라 두개. 후방 0, 전방 1)
+        // default camera id is 0 (default : two cameras. back face 0, front face 1)
         Camera.getCameraInfo(0, info);
         int degrees = 0;
         switch (rotation) {
@@ -153,10 +149,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
 
         int result;
-        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) { // 전면카메라
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) { // front
             result = (info.orientation + degrees) % 360;
             result = (360 - result) % 360;  // compensate the mirror
-        } else {  // 후면카메라
+        } else {  // back
             result = (info.orientation - degrees + 360) % 360;
         }
         mCamera.setDisplayOrientation(result);
