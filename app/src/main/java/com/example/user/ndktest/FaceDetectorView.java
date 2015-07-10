@@ -23,7 +23,8 @@ public class FaceDetectorView extends View {
     private Paint mPaint;
     private Paint mTextPaint;
     private Camera.Face[] mFaces;
-    private Rect mRect; // current face box
+    private Rect mRect; // default face box
+    private Rect mCurrRect; // current face box
 
     private Camera mCamera;
 
@@ -105,10 +106,11 @@ public class FaceDetectorView extends View {
                     Log.d(TAG, "face info (" + face.rect.centerX() + "," + face.rect.centerY() + " / " + face.rect.top + " , " + face.rect.bottom + "," + face.rect.left + "," + face.rect.right + ")");
                     Log.d(TAG, "face info (" + face.rect.width() + "," + face.rect.height() + ")");
 
-                    canvas.drawText("Detect Face!", 20, 40, mTextPaint);
+                    canvas.drawText("Detect Face!", 20, 60, mTextPaint);
                     //canvas.drawText("("+getWidth()/2+","+getHeight()/2+")",getWidth()/2,getHeight()/2,mTextPaint);
 
                     mRect = nomalizing(face.rect);
+                    mCurrRect = mRect;
 
                     canvas.drawRect(mRect, mPaint);
 
@@ -120,18 +122,23 @@ public class FaceDetectorView extends View {
             } else {
                 // canvas clear
                 canvas.drawColor(0, PorterDuff.Mode.CLEAR);
-                canvas.drawText("No Face", 20, 40, mTextPaint);
+                canvas.drawText("No Face", 20, 60, mTextPaint);
                 //Log.d(TAG,"passed faces is null");
             }
         }else if (mState == 0){
             // Drag Mode
-            Log.d("touchEvent", "Draw at " + mRect.centerX() + "," + mRect.centerY());
-            canvas.drawText("Draging Mode", 20, 40, mTextPaint);
+            canvas.drawText("Draging Mode", 20, 60, mTextPaint);
 
-            Rect afterRect = moving(mRect);
-            mRect = afterRect;
+            mCurrRect = moving(mRect);
+            //mRect = mCurrRect;
 
-            canvas.drawRect(afterRect, mPaint);
+            Log.d("touchEvent", "Draw from " + mRect.centerX() + "," + mRect.centerY());
+            Log.d("touchEvent", "Draw to " + mCurrRect.centerX() + "," + mCurrRect.centerY());
+
+            canvas.drawText("before offset : " + mRect.top + "," + mRect.bottom + "," + mRect.left + "," + mRect.right, 20, getWidth() * 4 / 3 - 80, mTextPaint);
+            canvas.drawText("after offset : " + mCurrRect.top + "," + mCurrRect.bottom + "," + mCurrRect.left + "," + mCurrRect.right, 20, getWidth() * 4 / 3 - 40, mTextPaint);
+
+            canvas.drawRect(mCurrRect, mPaint);
         }
         super.onDraw(canvas);
 
@@ -154,23 +161,23 @@ public class FaceDetectorView extends View {
                 break;
             case MotionEvent.ACTION_MOVE :
                 Log.d("touchEvent", "Move");
-                if (mRect.contains((int)x,(int)y)==true) {
+                if (mCurrRect.contains((int)x,(int)y)==true) {
                     // Touched in rect
                     if(mState == 1){
                         mState = 0;
 
-                        mPaint.setColor(Color.BLUE);
+                        mPaint.setColor(Color.YELLOW);
                         mPaint.setAlpha(128);
 
-                        mTextPaint.setColor(Color.BLUE);
+                        mTextPaint.setColor(Color.YELLOW);
                     }
 
                     int length = event.getHistorySize();
 
                     if(length != 0){
-                        moffsetX = (int)(event.getHistoricalX(length - 1)-event.getHistoricalX(0));
-                        moffsetY = (int)(event.getHistoricalY(length - 1) - event.getHistoricalY(0));
-                        Log.d("touchEvent","offset "+moffsetX+", "+moffsetY);
+                        moffsetX += (int)(event.getHistoricalX(length - 1) - event.getHistoricalX(0))*2;
+                        moffsetY += (int)(event.getHistoricalY(length - 1) - event.getHistoricalY(0))*2;
+                        Log.d("touchEvent","offset " + moffsetX + ", " + moffsetY);
                     }
                     invalidate();
                 }
