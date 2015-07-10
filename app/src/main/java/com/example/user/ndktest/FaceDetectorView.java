@@ -32,6 +32,7 @@ public class FaceDetectorView extends View {
     private int moffsetY;
 
     public int mState = 1; // 0 is Drag Mode, 1 is Detecting Mode
+    public boolean mTracking = false;
 
     public FaceDetectorView(Context context) {
         super(context);
@@ -152,16 +153,21 @@ public class FaceDetectorView extends View {
         // touched y
         float y = event.getY();
 
+
+
         switch (action) {
             case MotionEvent.ACTION_UP:
                 Log.d("touchEvent", "Up");
                 break;
             case MotionEvent.ACTION_DOWN:
                 Log.d("touchEvent", "Down");
+                if (mCurrRect.contains((int)x,(int)y)==true) {
+                    mTracking = true;
+                }
                 break;
             case MotionEvent.ACTION_MOVE :
                 Log.d("touchEvent", "Move");
-                if (mCurrRect.contains((int)x,(int)y)==true) {
+                if (mTracking) {
                     // Touched in rect
                     if(mState == 1){
                         mState = 0;
