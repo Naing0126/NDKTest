@@ -23,7 +23,11 @@ public class FaceDetectorView extends View {
     private Camera.Face[] mFaces;
     private Rect mRect;
 
+    public Camera mCamera;
+
     private int moffsetX,moffsetY;
+
+    public int mState = 1; // 0 is down
 
 
     public FaceDetectorView(Context context) {
@@ -51,6 +55,23 @@ public class FaceDetectorView extends View {
 
     }
 
+    public void setCamera(Camera camera){
+        mCamera = camera;
+
+        mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+
+            @Override
+            public void onPreviewFrame(byte[] data, Camera camera) {
+                Camera.Parameters params = mCamera.getParameters();
+                if (mState == 0) {
+                    mCamera.stopFaceDetection();
+                    mCamera.stopPreview();
+                    mCamera.release();
+                    mCamera = null;
+                }
+            }
+        });
+    }
     public void setFaces(Camera.Face[] faces){
         mFaces = faces;
         Log.d(TAG, "# of passed faces is " + mFaces.length);
@@ -62,41 +83,54 @@ public class FaceDetectorView extends View {
         // set(left,top,right,bottom)
         after.set((1000 - before.bottom) * getWidth() / 2000, (1000 - before.right) * (getWidth() * 4 / 3) / 2000,
                 (1000 - before.top) * getWidth() / 2000, (1000 - before.left) * (getWidth() * 4 / 3) / 2000);
-        Log.d("touchEvent", "normalising : offset " + moffsetX + ", " + moffsetY);
-        Log.d("touchEvent", "before offset (" + after.centerX() + "," + after.centerY() + "/ " + after.top + "," + after.bottom + "," + after.left + "," + after.right + ")");
-        after.set(after.left + moffsetX, after.top + moffsetY, after.right + moffsetX, after.bottom + moffsetY);
-        Log.d("touchEvent", "after offset (" + after.centerX() + "," + after.centerY() + "/ " + after.top + "," + after.bottom + "," + after.left + "," + after.right + ")");
 
+        return after;
+    }
+
+    public Rect moving(Rect before){
+        Rect after = new Rect();
+        Log.d("touchEvent", "before offset (" + before.centerX() + "," + before.centerY() + "/ " + before.top + "," + before.bottom + "," + before.left + "," + before.right + ")");
+        after.set(before.left + moffsetX, before.top + moffsetY, before.right + moffsetX, before.bottom + moffsetY);
+        Log.d("touchEvent", "after offset (" + after.centerX() + "," + after.centerY() + "/ " + after.top + "," + after.bottom + "," + after.left + "," + after.right + ")");
         return after;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (mFaces != null && mFaces.length > 0) {
-            mRect = new Rect();
-            for (Camera.Face face : mFaces) {
-                Log.d(TAG, "face info (" + face.rect.centerX() + "," + face.rect.centerY() + " / " + face.rect.top + " , " + face.rect.bottom + "," + face.rect.left + "," + face.rect.right + ")");
-                Log.d(TAG, "face info (" + face.rect.width() + "," + face.rect.height() + ")");
+        if(mState == 1) {
+            if (mFaces != null && mFaces.length > 0) {
+                mRect = new Rect();
+                for (Camera.Face face : mFaces) {
+                    Log.d(TAG, "face info (" + face.rect.centerX() + "," + face.rect.centerY() + " / " + face.rect.top + " , " + face.rect.bottom + "," + face.rect.left + "," + face.rect.right + ")");
+                    Log.d(TAG, "face info (" + face.rect.width() + "," + face.rect.height() + ")");
 
-                canvas.drawText("Detect Face!", 20, 40, mTextPaint);
-                //canvas.drawText("("+getWidth()/2+","+getHeight()/2+")",getWidth()/2,getHeight()/2,mTextPaint);
+                    canvas.drawText("Detect Face!", 20, 40, mTextPaint);
+                    //canvas.drawText("("+getWidth()/2+","+getHeight()/2+")",getWidth()/2,getHeight()/2,mTextPaint);
 
-                mRect = nomalizing(face.rect);
+                    mRect = nomalizing(face.rect);
 
-                canvas.drawRect(mRect, mPaint);
+                    canvas.drawRect(mRect, mPaint);
 
-                canvas.drawText("before : "+face.rect.top +"," +face.rect.bottom+","+face.rect.left +"," +face.rect.right, 20,getWidth() * 4/3 - 80,mTextPaint);
-                canvas.drawText("after : "+mRect.top +"," +mRect.bottom+","+mRect.left +"," +mRect.right, 20,getWidth() * 4/3 - 40,mTextPaint);
+                    canvas.drawText("before : " + face.rect.top + "," + face.rect.bottom + "," + face.rect.left + "," + face.rect.right, 20, getWidth() * 4 / 3 - 80, mTextPaint);
+                    canvas.drawText("after : " + mRect.top + "," + mRect.bottom + "," + mRect.left + "," + mRect.right, 20, getWidth() * 4 / 3 - 40, mTextPaint);
+                }
 
-
+                canvas.restore();
+                mFaces = null;
+            } else {
+                canvas.drawColor(0, PorterDuff.Mode.CLEAR);
+                canvas.drawText("No Face", 20, 40, mTextPaint);
+                //Log.d(TAG,"passed faces is null");
             }
+        }else if (mState == 0){
+            Log.d("touchEvent","onDraw! "+mRect.centerX()+","+mRect.centerY());
+            canvas.drawText("Draging Mode", 20, 40, mTextPaint);
 
+            Rect afterRect = moving(mRect);
+
+            mRect = afterRect;
+            canvas.drawRect(afterRect, mPaint);
             canvas.restore();
-            mFaces = null;
-        }else{
-            canvas.drawColor(0, PorterDuff.Mode.CLEAR);
-            canvas.drawText("No Face", 20, 40, mTextPaint);
-            //Log.d(TAG,"passed faces is null");
         }
         super.onDraw(canvas);
 
@@ -118,6 +152,7 @@ public class FaceDetectorView extends View {
                 break;
             case MotionEvent.ACTION_DOWN:
                 if (mRect.contains((int)x,(int)y)==true) {
+                    mState = 0;
                     mFaces=null;
                     Log.d("touchEvent","Hit!!!!!!!!1");
 
@@ -127,6 +162,7 @@ public class FaceDetectorView extends View {
                 break;
             case MotionEvent.ACTION_MOVE :
                 if (mRect.contains((int)x,(int)y)==true) {
+                    mState = 0;
                     int length = event.getHistorySize();
 
                     if(length != 0){
@@ -134,9 +170,7 @@ public class FaceDetectorView extends View {
                         moffsetY = (int)(event.getHistoricalY(length-1)-event.getHistoricalY(0));
                         Log.d("touchEvent","offset "+moffsetX+", "+moffsetY);
                     }
-
-                    mPaint.setColor(Color.BLUE);
-                    mPaint.setAlpha(128);
+                    invalidate();
                 }
                 Log.d("touchEvent", "Move");
                 break;

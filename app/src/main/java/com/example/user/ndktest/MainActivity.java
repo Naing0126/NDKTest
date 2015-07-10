@@ -44,6 +44,18 @@ public class MainActivity extends Activity {
         mPreview.setDetectedView(mDetectView);
     }
 
+    @Override
+    protected void onPause() {
+        mPreview.releaseCamera();
+        super.onPause();
+
+    }
+
+    @Override
+    protected void onStop() {
+        mPreview.releaseCamera();
+        super.onStop();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

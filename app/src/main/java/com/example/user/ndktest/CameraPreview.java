@@ -63,8 +63,16 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         setMeasuredDimension(width, height);
     }
 
+    public void releaseCamera(){
+        if(mCamera != null) {
+            mCamera.release();
+            mCamera = null;
+        }
+    }
+
     public void setDetectedView(FaceDetectorView view){
         mDetectedView = view;
+        mDetectedView.setCamera(mCamera);
     }
 
     @Override
@@ -176,7 +184,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             if (faces.length > 0){
                 //Log.d(TAG, "face detected: " + faces.length);
                 mDetectedView.setFaces(faces);
-                mDetectedView.invalidate();
+                //mDetectedView.invalidate();
             }else {
                 //Log.d(TAG, "No faces detected");
                 //faces = null;
