@@ -13,7 +13,7 @@ public class MainActivity extends Activity {
 
     private CameraPreview mPreview;
     private FaceDetectorView mDetectView;
-
+/*
     static{
         try {
             System.loadLibrary("NDKTest");
@@ -24,7 +24,7 @@ public class MainActivity extends Activity {
 
 
     public native int getMatHeight(int w, int h);
-
+*/
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

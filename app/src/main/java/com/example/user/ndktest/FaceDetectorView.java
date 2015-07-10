@@ -153,8 +153,6 @@ public class FaceDetectorView extends View {
         // touched y
         float y = event.getY();
 
-
-
         switch (action) {
             case MotionEvent.ACTION_UP:
                 Log.d("touchEvent", "Up");
