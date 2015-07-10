@@ -1,8 +1,6 @@
 package com.example.user.ndktest;
 
 import android.app.Activity;
-import android.content.Context;
-import android.hardware.Camera;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -13,8 +11,6 @@ import android.view.WindowManager;
 public class MainActivity extends Activity {
     private static final String TAG = "naing";
 
-    private Context mContext = this;
-    private Camera mCamera;
     private CameraPreview mPreview;
     private FaceDetectorView mDetectView;
 
@@ -41,14 +37,13 @@ public class MainActivity extends Activity {
 
         mPreview = (CameraPreview) findViewById(R.id.cameraPreview);
         mDetectView = (FaceDetectorView) findViewById(R.id.detectView);
-        mPreview.setDetectedView(mDetectView);
+        mPreview.setDetectedView(mDetectView); // Previewø° Face Detector View ∞¥√º∏¶ ¿˙¿Â«ÿµ–¥Ÿ
     }
 
     @Override
     protected void onPause() {
         mPreview.releaseCamera();
         super.onPause();
-
     }
 
     @Override

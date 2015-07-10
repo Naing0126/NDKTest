@@ -16,18 +16,22 @@ import java.io.IOException;
 
 /**
  * Created by Naing on 2015-07-06.
+ * Camera & Preview Control view
  */
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
-    String TAG = "CAMERA_PREVIEW";
+    String TAG = "CAMERA_CONTROL";
 
     private SurfaceHolder mHolder;
     private Camera mCamera;
     private Activity mActivity;
     private FaceDetectorView mDetectedView;
 
+    int FRONT = Camera.CameraInfo.CAMERA_FACING_FRONT;
+    int BACK = Camera.CameraInfo.CAMERA_FACING_BACK;
+    int mOrientation = FRONT;
+
     public CameraPreview(Context context){
         super(context);
-
     }
 
     public CameraPreview(Context context, AttributeSet attrs) {
@@ -35,19 +39,23 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
         mActivity = (Activity)context;
         if(checkCameraHardware(context)){
-            mCamera = getCameraInstance();
+            mCamera = getCameraInstance(mOrientation);
         }
-
-
-        //mDetectedView = new FaceDetectorView(context);
 
         mHolder = getHolder();
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
 
+    public void releaseCamera(){
+        if(mCamera != null) {
+            mCamera.release();
+            mCamera = null;
+        }
+    }
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        // set surface view ratio to 3:4
         int width = resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec);
         int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
 
@@ -63,23 +71,15 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         setMeasuredDimension(width, height);
     }
 
-    public void releaseCamera(){
-        if(mCamera != null) {
-            mCamera.release();
-            mCamera = null;
-        }
-    }
-
     public void setDetectedView(FaceDetectorView view){
         mDetectedView = view;
-        mDetectedView.setCamera(mCamera);
+        mDetectedView.setCamera(mCamera); // pass camera to detector view
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         try {
-
-            setCameraDisplayOrientation(mActivity);
+            setCameraDisplayOrientation(FRONT);
 
             mCamera.setPreviewDisplay(holder);
             mCamera.startPreview();
@@ -116,13 +116,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
     }
 
-    private static int findFrontFacingCamera(){
+    private static int findCamera(int orientation){
         int cameraId = -1;
         int numberOfCameras = Camera.getNumberOfCameras();
         for(int i = 0;i<numberOfCameras;i++){
             Camera.CameraInfo info = new Camera.CameraInfo();
             Camera.getCameraInfo(i,info);
-            if(info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT){
+            if(info.facing == orientation){
                 cameraId = i;
                 break;
             }
@@ -130,10 +130,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         return cameraId;
     }
 
-    public static Camera getCameraInstance(){
+    public static Camera getCameraInstance(int orientation){
         Camera c = null;
         try {
-            c = Camera.open(findFrontFacingCamera());
+            c = Camera.open(findCamera(orientation));
         }
         catch (Exception e){
             // using or disable
@@ -141,28 +141,18 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         return c;
     }
 
-    private void setCameraDisplayOrientation(Activity activity){
-
-        int rotation = activity.getWindowManager().getDefaultDisplay()
-                .getRotation();
+    private void setCameraDisplayOrientation(int orientation){
         Camera.CameraInfo info = new Camera.CameraInfo();
-        // default camera id is 0 (default : two cameras. back face 0, front face 1)
-        Camera.getCameraInfo(0, info);
-        int degrees = 0;
-        switch (rotation) {
-            case Surface.ROTATION_0: degrees = 0; break;
-            case Surface.ROTATION_90: degrees = 90; break;
-            case Surface.ROTATION_180: degrees = 180; break;
-            case Surface.ROTATION_270: degrees = 270; break;
+        // default camera id is 0 (default : two cameras. front face 0, back face 1)
+        Camera.getCameraInfo(orientation, info);
+        int mode = 90; // 90 : portrait mode
+        int result;
+        if (info.facing == FRONT) { // front
+            result = mode;
+        } else {  // back
+            result = (360-mode);
         }
 
-        int result;
-        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) { // front
-            result = (info.orientation + degrees) % 360;
-            result = (360 - result) % 360;  // compensate the mirror
-        } else {  // back
-            result = (info.orientation - degrees + 360) % 360;
-        }
         mCamera.setDisplayOrientation(result);
     }
 
@@ -184,13 +174,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             if (faces.length > 0){
                 //Log.d(TAG, "face detected: " + faces.length);
                 mDetectedView.setFaces(faces);
-                //mDetectedView.invalidate();
             }else {
                 //Log.d(TAG, "No faces detected");
-                //faces = null;
-                //mDetectedView.setFaces(faces);
-                mDetectedView.invalidate();
             }
+            mDetectedView.invalidate();
         }
     };
 }
