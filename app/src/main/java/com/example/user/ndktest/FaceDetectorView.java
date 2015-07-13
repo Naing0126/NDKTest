@@ -1,11 +1,14 @@
 package com.example.user.ndktest;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.hardware.Camera;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -24,7 +27,10 @@ public class FaceDetectorView extends View {
     private Paint mTextPaint;
     private Camera.Face[] mFaces;
     private Rect mRect; // default face box
-    private Rect mCurrRect; // current face box
+    //private Rect mCurrRect; // current face box
+
+    private Bitmap mFaceline;
+    private Bitmap mCurrFaceline;
 
     private Camera mCamera;
 
@@ -57,6 +63,9 @@ public class FaceDetectorView extends View {
 
         moffsetX = moffsetY = 0; // initialize
 
+        Resources res = getResources();
+        BitmapDrawable bd = (BitmapDrawable)res.getDrawable(R.drawable.coordinate_face_line);
+        mFaceline = bd.getBitmap();
     }
 
     public void setCamera(Camera camera){
@@ -88,13 +97,21 @@ public class FaceDetectorView extends View {
 
         return after;
     }
-
+/*
     public Rect moving(Rect before){
         Rect after = new Rect();
         //Log.d("touchEvent", "before offset (" + before.centerX() + "," + before.centerY() + "/ " + before.top + "," + before.bottom + "," + before.left + "," + before.right + ")");
         after.set(before.left + moffsetX, before.top + moffsetY, before.right + moffsetX, before.bottom + moffsetY);
         //Log.d("touchEvent", "after offset (" + after.centerX() + "," + after.centerY() + "/ " + after.top + "," + after.bottom + "," + after.left + "," + after.right + ")");
         return after;
+    }
+*/
+
+    public Bitmap resizeBitmapImage(Bitmap source,Rect destination)
+    {
+        int width=destination.width();
+        int height=destination.height();
+        return Bitmap.createScaledBitmap(source,width,height,true);
     }
 
     @Override
@@ -111,7 +128,6 @@ public class FaceDetectorView extends View {
                     //canvas.drawText("("+getWidth()/2+","+getHeight()/2+")",getWidth()/2,getHeight()/2,mTextPaint);
 
                     mRect = nomalizing(face.rect);
-                    mCurrRect = mRect;
 
                     canvas.drawRect(mRect, mPaint);
 
@@ -130,16 +146,15 @@ public class FaceDetectorView extends View {
             // Drag Mode
             canvas.drawText("Draging Mode", 20, 60, mTextPaint);
 
-            mCurrRect = moving(mRect);
-            //mRect = mCurrRect;
+            mFaceline = resizeBitmapImage(mFaceline, mRect);
 
-            Log.d("touchEvent", "Draw from " + mRect.centerX() + "," + mRect.centerY());
-            Log.d("touchEvent", "Draw to " + mCurrRect.centerX() + "," + mCurrRect.centerY());
+            Log.d("touchEvent", "Draw from " + mRect.width() + "," + mRect.height());
+            Log.d("touchEvent", "Draw to " + (mRect.width() + moffsetX) + "," + (mRect.height()+moffsetY));
 
-            canvas.drawText("before offset : " + mRect.top + "," + mRect.bottom + "," + mRect.left + "," + mRect.right, 20, getWidth() * 4 / 3 - 80, mTextPaint);
-            canvas.drawText("after offset : " + mCurrRect.top + "," + mCurrRect.bottom + "," + mCurrRect.left + "," + mCurrRect.right, 20, getWidth() * 4 / 3 - 40, mTextPaint);
+            canvas.drawText("before offset : " + mRect.width() + "," + mRect.height(), 20, getWidth() * 4 / 3 - 80, mTextPaint);
+            canvas.drawText("after offset : " + (mRect.width() + moffsetX) + "," + (mRect.height()+moffsetY), 20, getWidth() * 4 / 3 - 40, mTextPaint);
 
-            canvas.drawRect(mCurrRect, mPaint);
+            canvas.drawBitmap(mFaceline,mRect.left+moffsetX,mRect.top+moffsetY,null);
         }
         super.onDraw(canvas);
 
@@ -159,7 +174,7 @@ public class FaceDetectorView extends View {
                 break;
             case MotionEvent.ACTION_DOWN:
                 Log.d("touchEvent", "Down");
-                if (mCurrRect.contains((int)x,(int)y)==true) {
+                if (mRect.contains((int)x,(int)y)==true) {
                     mTracking = true;
                 }
                 break;
