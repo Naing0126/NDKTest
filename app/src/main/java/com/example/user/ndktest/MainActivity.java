@@ -13,6 +13,7 @@ public class MainActivity extends Activity {
 
     private CameraPreview mPreview;
     private FaceDetectorView mDetectView;
+    private ImageControlView mControlView;
 /*
     static{
         try {
@@ -38,6 +39,9 @@ public class MainActivity extends Activity {
         mPreview = (CameraPreview) findViewById(R.id.cameraPreview);
         mDetectView = (FaceDetectorView) findViewById(R.id.detectView);
         mPreview.setDetectedView(mDetectView); // Previewø° Face Detector View ∞¥√º∏¶ ¿˙¿Â«ÿµ–¥Ÿ
+
+        //mControlView = (ImageControlView) findViewById(R.id.controlView);
+        //mDetectView.setControlView(mControlView);
     }
 
     @Override

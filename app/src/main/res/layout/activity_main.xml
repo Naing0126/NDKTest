@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:id="@+id/parentPanel"
     tools:context=".MainActivity"
     android:weightSum="1">
 
@@ -18,5 +19,13 @@
         android:layout_height="match_parent"
         android:id="@+id/detectView"
         android:clickable="true"/>
+
+    <!--
+        <com.example.user.ndktest.ImageControlView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/controlView"
+            android:clickable="true"/>
+    -->
 
 </FrameLayout>

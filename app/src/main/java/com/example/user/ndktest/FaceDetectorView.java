@@ -5,6 +5,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
@@ -23,21 +24,36 @@ import android.view.View;
 public class FaceDetectorView extends View {
 
     private static final String TAG = "VIEW_CONTROL";
+
+    private ImageControlView mControlView;
+
     private Paint mPaint;
     private Paint mTextPaint;
     private Camera.Face[] mFaces;
     private Rect mRect; // default face box
-    //private Rect mCurrRect; // current face box
+    private Rect mCurrRect; // current face box
+    private Rect mSizeRect;
+    private Rect mRotateRect;
 
     private Bitmap mFaceline;
-    private Bitmap mCurrFaceline;
+    private Bitmap mSize;
+    private Bitmap mRotate;
+
+    private static final int CONTROL_BTN_SIZE = 100;
 
     private Camera mCamera;
 
     private int moffsetX;
     private int moffsetY;
+    private double mScale;
+    private float mDegree;
 
-    public int mState = 1; // 0 is Drag Mode, 1 is Detecting Mode
+    private static final int DEFAULT_MODE = 0;
+    private static final int DRAG_MODE = 1;
+    private static final int RESIZE_MODE = 2;
+    private static final int ROTATE_MODE = 3;
+
+    public int mState = DEFAULT_MODE; // 0 is Drag Mode, 1 is Detecting Mode
     public boolean mTracking = false;
 
     public FaceDetectorView(Context context) {
@@ -62,10 +78,28 @@ public class FaceDetectorView extends View {
         mTextPaint.setStyle(Paint.Style.FILL);
 
         moffsetX = moffsetY = 0; // initialize
+        mScale = 1;
+        mDegree = 0;
 
         Resources res = getResources();
-        BitmapDrawable bd = (BitmapDrawable)res.getDrawable(R.drawable.coordinate_face_line);
+        BitmapDrawable bd = (BitmapDrawable)res.getDrawable(R.drawable.default_image);
         mFaceline = bd.getBitmap();
+        bd = (BitmapDrawable)res.getDrawable(R.drawable.coordinate_size);
+        mSize = bd.getBitmap();
+        bd = (BitmapDrawable)res.getDrawable(R.drawable.coordinate_rotate);
+        mRotate = bd.getBitmap();
+
+        Rect initBtn = new Rect();
+        initBtn.set(0,0,CONTROL_BTN_SIZE,CONTROL_BTN_SIZE);
+        mSize = resizeBitmapImage(mSize,initBtn);
+        mRotate = resizeBitmapImage(mRotate, initBtn);
+
+        mCurrRect = new Rect();
+        //mCurrRect.set(mRect.left + moffsetX, mRect.top + moffsetY, mRect.right + moffsetX, mRect.bottom + moffsetY);
+
+        mSizeRect = new Rect();
+
+        mRotateRect = new Rect();
     }
 
     public void setCamera(Camera camera){
@@ -75,7 +109,7 @@ public class FaceDetectorView extends View {
 
             @Override
             public void onPreviewFrame(byte[] data, Camera camera) {
-                if (mState == 0) { // Camera release in Drag Mode
+                if (mState == DRAG_MODE) { // Camera release in Drag Mode
                     mCamera.stopPreview();
                     mCamera.release();
                     mCamera = null;
@@ -86,6 +120,10 @@ public class FaceDetectorView extends View {
     public void setFaces(Camera.Face[] faces){
         mFaces = faces;
         Log.d(TAG, "# of passed faces is " + mFaces.length);
+    }
+
+    public void setControlView(ImageControlView view){
+        mControlView = view;
     }
 
     public Rect nomalizing(Rect before){
@@ -116,7 +154,8 @@ public class FaceDetectorView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if(mState == 1) {
+
+        if(mState == DEFAULT_MODE) {
             // Detect Mode
             if (mFaces != null && mFaces.length > 0) {
                 mRect = new Rect();
@@ -128,11 +167,21 @@ public class FaceDetectorView extends View {
                     //canvas.drawText("("+getWidth()/2+","+getHeight()/2+")",getWidth()/2,getHeight()/2,mTextPaint);
 
                     mRect = nomalizing(face.rect);
-
-                    canvas.drawRect(mRect, mPaint);
+                    mCurrRect = mRect;
+                    canvas.drawRect(mCurrRect, mPaint);
 
                     canvas.drawText("before : " + face.rect.top + "," + face.rect.bottom + "," + face.rect.left + "," + face.rect.right, 20, getWidth() * 4 / 3 - 80, mTextPaint);
-                    canvas.drawText("after : " + mRect.top + "," + mRect.bottom + "," + mRect.left + "," + mRect.right, 20, getWidth() * 4 / 3 - 40, mTextPaint);
+                    canvas.drawText("after : " + mCurrRect.top + "," + mCurrRect.bottom + "," + mCurrRect.left + "," + mCurrRect.right, 20, getWidth() * 4 / 3 - 40, mTextPaint);
+
+
+                    //mSizeRect = new Rect();
+                    mSizeRect.set(mCurrRect.right - CONTROL_BTN_SIZE / 2, mCurrRect.top,
+                            mCurrRect.right + CONTROL_BTN_SIZE / 2, mCurrRect.top + CONTROL_BTN_SIZE);
+
+                    //mRotateRect = new Rect();
+                    mRotateRect.set(mCurrRect.right - CONTROL_BTN_SIZE / 2, mCurrRect.bottom
+                            - CONTROL_BTN_SIZE, mCurrRect.right + CONTROL_BTN_SIZE / 2, mCurrRect.bottom);
+
                 }
 
                 mFaces = null; // remove faces before new detect
@@ -142,19 +191,46 @@ public class FaceDetectorView extends View {
                 canvas.drawText("No Face", 20, 60, mTextPaint);
                 //Log.d(TAG,"passed faces is null");
             }
-        }else if (mState == 0){
-            // Drag Mode
-            canvas.drawText("Draging Mode", 20, 60, mTextPaint);
-
-            mFaceline = resizeBitmapImage(mFaceline, mRect);
+        }else if (mState >= DRAG_MODE){
+            switch(mState) {
+                case DRAG_MODE:
+                    // Drag Mode
+                    canvas.drawText("Draging Mode", 20, 60, mTextPaint);
+                    break;
+                case RESIZE_MODE:
+                    canvas.drawText("Resising Mode", 20, 60, mTextPaint);
+                    break;
+                case ROTATE_MODE:
+                    canvas.drawText("Rotating Mode", 20, 60, mTextPaint);
+                    break;
+            }
+/*
 
             Log.d("touchEvent", "Draw from " + mRect.width() + "," + mRect.height());
-            Log.d("touchEvent", "Draw to " + (mRect.width() + moffsetX) + "," + (mRect.height()+moffsetY));
+            Log.d("touchEvent", "Draw to " + (mRect.width() + moffsetX) + "," + (mRect.height() + moffsetY));
 
-            canvas.drawText("before offset : " + mRect.width() + "," + mRect.height(), 20, getWidth() * 4 / 3 - 80, mTextPaint);
-            canvas.drawText("after offset : " + (mRect.width() + moffsetX) + "," + (mRect.height()+moffsetY), 20, getWidth() * 4 / 3 - 40, mTextPaint);
+            Log.d("touchEvent", "(center" + (int) (mRect.centerX() + moffsetX - mRect.width() / 2) + "," +
+                    (int) (mRect.centerY() + moffsetY - mRect.height() / 2) + "," +
+                    (int) (mRect.centerX() + moffsetX + mRect.width() / 2) + "," +
+                    (int) (mRect.centerY() + moffsetY + mRect.height() / 2) + ")");
+            Log.d("touchEvent", "(origin" + (int) (mRect.left + moffsetX)+","+
+                    (int) (mRect.top + moffsetY)+","+
+                    (int) (mRect.right + moffsetX)+","+
+                    (int) (mRect.bottom + moffsetY)+")");
+            */
 
-            canvas.drawBitmap(mFaceline,mRect.left+moffsetX,mRect.top+moffsetY,null);
+            canvas.drawText("before offset : " + mRect.centerX() + "," + mRect.centerY() + " / " + mRect.width() + "," + mRect.height(), 20, getWidth() * 4 / 3 - 80, mTextPaint);
+            canvas.drawText("after offset : " + mCurrRect.centerX() + "," + mCurrRect.centerY() + " / " + mCurrRect.width() + "," + mCurrRect.height(), 20, getWidth() * 4 / 3 - 40, mTextPaint);
+            canvas.drawText("offset : " + moffsetX + "," + moffsetY, 20, getWidth() * 4 / 3 - 120, mTextPaint);
+            canvas.drawText("scale : " + mScale, 20, getWidth() * 4 / 3 - 160, mTextPaint);
+            canvas.drawText("degree : " + mDegree, 20, getWidth() * 4 / 3 - 200, mTextPaint);
+
+            canvas.drawBitmap(mFaceline, mCurrRect.left, mCurrRect.top, mPaint);
+
+            canvas.drawBitmap(mSize, mSizeRect.left, mSizeRect.top, null);
+
+            canvas.drawBitmap(mRotate,mRotateRect.left,mRotateRect.top,null);
+
         }
         super.onDraw(canvas);
 
@@ -171,34 +247,122 @@ public class FaceDetectorView extends View {
         switch (action) {
             case MotionEvent.ACTION_UP:
                 Log.d("touchEvent", "Up");
+                if(mState>DEFAULT_MODE)
+                    mState = DRAG_MODE;
                 break;
             case MotionEvent.ACTION_DOWN:
                 Log.d("touchEvent", "Down");
-                if (mRect.contains((int)x,(int)y)==true) {
-                    mTracking = true;
+
+                if(mSizeRect.contains((int)x,(int)y)==true){
+                    mState = RESIZE_MODE;
+                    Log.d("touchEvent", "resizing mode");
+                }else if(mRotateRect.contains((int)x,(int)y)==true){
+                    mState = ROTATE_MODE;
+                    Log.d("touchEvent", "rotating mode");
+
+                    Matrix matrix = new Matrix();
+                    mDegree = (mDegree + 90) % 360;
+                    matrix.setRotate(mDegree,mFaceline.getWidth()/2,mFaceline.getHeight()/2);
+
+                    mFaceline = Bitmap.createBitmap(mFaceline,0,0,mFaceline.getWidth(),mFaceline.getHeight(),matrix,true);
+                    mFaceline = resizeBitmapImage(mFaceline, mCurrRect);
+
+                    //mFaceline.recycle();
+                    invalidate();
+
+                }else if (mCurrRect.contains((int)x,(int)y)==true) {
+                    if(mState == DEFAULT_MODE){
+                        Log.d("touchEvent", "Change to drag mode");
+                        mState = DRAG_MODE;
+
+                        mFaceline = resizeBitmapImage(mFaceline, mCurrRect);
+
+                        mPaint.setColor(Color.BLUE);
+                        mPaint.setAlpha(128);
+
+                        mTextPaint.setColor(Color.BLUE);
+                    }else{
+                        mState = DRAG_MODE;
+                        Log.d("touchEvent", "dragging mode");
+                    }
                 }
                 break;
             case MotionEvent.ACTION_MOVE :
-                Log.d("touchEvent", "Move");
-                if (mTracking) {
-                    // Touched in rect
-                    if(mState == 1){
-                        mState = 0;
-
-                        mPaint.setColor(Color.YELLOW);
-                        mPaint.setAlpha(128);
-
-                        mTextPaint.setColor(Color.YELLOW);
-                    }
+                //Log.d("touchEvent", "Move");
+                //Log.d("touchEvent","("+x+","+y+")");
+                if (mSizeRect.contains((int) x, (int) y) == true && mState == RESIZE_MODE) {
+                    Log.d("touchEvent", "Change scale");
 
                     int length = event.getHistorySize();
 
-                    if(length != 0){
-                        moffsetX += (int)(event.getHistoricalX(length - 1) - event.getHistoricalX(0))*2;
-                        moffsetY += (int)(event.getHistoricalY(length - 1) - event.getHistoricalY(0))*2;
-                        Log.d("touchEvent","offset " + moffsetX + ", " + moffsetY);
+                    if (length != 0) {
+                        int tx = (int) (event.getHistoricalX(length - 1) - event.getHistoricalX(0));
+                        int ty = (int) (event.getHistoricalY(length - 1) - event.getHistoricalY(0));
+                        int abs;
+                        Log.d("touchEvent","tx "+tx+" ty "+ty);
+
+                        if(tx==0 && ty==0){
+                            break;
+                        }
+                        if(tx>0){
+                            Log.d("touchEvent","to bigger");
+                            if (tx < ty * (-1)) {
+                                abs = (-1) * ty;
+                            } else {
+                                abs = tx;
+                            }
+                        }else{
+                            Log.d("touchEvent","to smaller");
+                            if (tx > ty * (-1)) {
+                                abs = tx;
+                            } else {
+                                abs = (-1) * ty;
+                            }
+                        }
+
+                        mScale = (mRect.width() * mScale + abs) / mRect.width();
+                        Log.d("touchEvent", "abs " + abs + " mScale " + mScale);
+
+                        mCurrRect.set(mCurrRect.left, (int) (mCurrRect.bottom - mRect.height() * mScale), (int) (mCurrRect.left + mRect.width() * mScale), mCurrRect.bottom);
+
+                        Log.d("touchEvent", "mScale " + mScale + " before / after " + (double)mCurrRect.width()/(double)mRect.width());
+
+                        mFaceline = resizeBitmapImage(mFaceline, mCurrRect);
+
+                        mSizeRect.set(mCurrRect.right - CONTROL_BTN_SIZE / 2, mCurrRect.top,
+                                mCurrRect.right + CONTROL_BTN_SIZE / 2, mCurrRect.top + CONTROL_BTN_SIZE);
+
+                        mRotateRect.set(mCurrRect.right - CONTROL_BTN_SIZE / 2, mCurrRect.bottom
+                                - CONTROL_BTN_SIZE, mCurrRect.right + CONTROL_BTN_SIZE / 2, mCurrRect.bottom);
+                        Log.d("touchEvent", "mScale is " + mScale);
+
                     }
                     invalidate();
+
+                }
+                else if (mCurrRect.contains((int) x, (int) y) == true && mState == DRAG_MODE) {
+                    Log.d("touchEvent", "Image Move");
+
+                    int length = event.getHistorySize();
+
+                    if (length != 0) {
+                        int tx = (int) (event.getHistoricalX(length - 1) - event.getHistoricalX(0));
+                        int ty = (int) (event.getHistoricalY(length - 1) - event.getHistoricalY(0));
+
+                        mCurrRect.set(mCurrRect.left+tx,mCurrRect.top+ty,mCurrRect.right+tx,mCurrRect.bottom+ty);
+
+                        mSizeRect.set(mCurrRect.right - CONTROL_BTN_SIZE / 2, mCurrRect.top,
+                                mCurrRect.right + CONTROL_BTN_SIZE / 2, mCurrRect.top + CONTROL_BTN_SIZE);
+
+                        mRotateRect.set(mCurrRect.right - CONTROL_BTN_SIZE / 2, mCurrRect.bottom
+                                - CONTROL_BTN_SIZE, mCurrRect.right + CONTROL_BTN_SIZE / 2, mCurrRect.bottom);
+
+                        moffsetX += tx;
+                        moffsetY += ty;
+                        //Log.d("touchEvent", "offset " + moffsetX + ", " + moffsetY);
+                    }
+                    invalidate();
+
                 }
                 break;
         }
