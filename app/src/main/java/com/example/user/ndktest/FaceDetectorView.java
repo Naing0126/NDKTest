@@ -1,16 +1,22 @@
 package com.example.user.ndktest;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.hardware.Camera;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageButton;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 /**
  * Created by Naing on 2015-07-07.
@@ -21,18 +27,38 @@ public class FaceDetectorView extends View {
 
     private static final String TAG = "VIEW_CONTROL";
     private Paint mPaint;
-    private Paint mTextPaint;
-    private Camera.Face[] mFaces;
+   private Camera.Face[] mFaces;
     private Rect mRect; // default face box
-    private Rect mCurrRect; // current face box
+    //private Rect mCurrRect; // current face box
+
+    private Bitmap mFaceline;
+    private TextView text;
+    private ImageButton shutterButton;
+    private int ShutterFlag =0;
+
+    private ImageButton Back;
+    private ImageButton Check;
 
     private Camera mCamera;
+
+    private int ShutterOn;
 
     private int moffsetX;
     private int moffsetY;
 
+    private int topsizing;
+    private int bottomsizing;
+
+    private RelativeLayout mShutterChange;
+    private RelativeLayout mBottomView;
+    private RelativeLayout mDoneView;
+    private RelativeLayout mCheckView;
+    private RelativeLayout mBackView;
+    private int backflag=0;
+
     public int mState = 1; // 0 is Drag Mode, 1 is Detecting Mode
     public boolean mTracking = false;
+    private CameraPreview mPreview;
 
     public FaceDetectorView(Context context) {
         super(context);
@@ -48,15 +74,11 @@ public class FaceDetectorView extends View {
         mPaint.setAlpha(128);
         mPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
-        mTextPaint = new Paint();
-        mTextPaint.setAntiAlias(true);
-        mTextPaint.setDither(true);
-        mTextPaint.setTextSize(40);
-        mTextPaint.setColor(Color.GREEN);
-        mTextPaint.setStyle(Paint.Style.FILL);
-
         moffsetX = moffsetY = 0; // initialize
 
+        Resources res = getResources();
+        BitmapDrawable bd = (BitmapDrawable)res.getDrawable(R.drawable.coordinate_face_line);
+        mFaceline = bd.getBitmap();
     }
 
     public void setCamera(Camera camera){
@@ -69,11 +91,19 @@ public class FaceDetectorView extends View {
                 if (mState == 0) { // Camera release in Drag Mode
                     mCamera.stopPreview();
                     mCamera.release();
-                    mCamera = null;
+                    Log.d("test1234","camera"+mCamera);
+                    //mCamera = null;
+                }
+                // back button click
+                if(backflag ==1){
+                    Log.d("test1234", "startpreview");
+                    mCamera.startPreview();
+                    mPreview.startFaceDetection();
                 }
             }
         });
     }
+
     public void setFaces(Camera.Face[] faces){
         mFaces = faces;
         Log.d(TAG, "# of passed faces is " + mFaces.length);
@@ -82,24 +112,31 @@ public class FaceDetectorView extends View {
     public Rect nomalizing(Rect before){
         // Normalizing detected face rect to displayed face rect
         Rect after = new Rect();
+        topsizing=((1000-before.right)*(getWidth()*4/3)/2000 - ((1000 - before.left) * (getWidth() * 4 / 3) / 2000))*1/5;
+        bottomsizing=((1000-before.right)*(getWidth()*4/3)/2000 - ((1000 - before.left) * (getWidth() * 4 / 3) / 2000))*1/8;
         // set(left,top,right,bottom)
-        after.set((1000 - before.bottom) * getWidth() / 2000, (1000 - before.right) * (getWidth() * 4 / 3) / 2000,
-                (1000 - before.top) * getWidth() / 2000, (1000 - before.left) * (getWidth() * 4 / 3) / 2000);
-
+        after.set((1000 - before.bottom) * getWidth() / 2000, ((1000 - before.right) * (getWidth() * 4 / 3) / 2000) + topsizing,
+                (1000 - before.top) * getWidth() / 2000, ((1000 - before.left) * (getWidth() * 4 / 3) / 2000) - bottomsizing);
         return after;
     }
 
-    public Rect moving(Rect before){
-        Rect after = new Rect();
-        //Log.d("touchEvent", "before offset (" + before.centerX() + "," + before.centerY() + "/ " + before.top + "," + before.bottom + "," + before.left + "," + before.right + ")");
-        after.set(before.left + moffsetX, before.top + moffsetY, before.right + moffsetX, before.bottom + moffsetY);
-        //Log.d("touchEvent", "after offset (" + after.centerX() + "," + after.centerY() + "/ " + after.top + "," + after.bottom + "," + after.left + "," + after.right + ")");
-        return after;
+    public Bitmap resizeBitmapImage(Bitmap source,Rect destination)
+    {
+        int width=destination.width();
+        int height=destination.height();
+        return Bitmap.createScaledBitmap(source,width,height,true);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         if(mState == 1) {
+            Log.d("test123","backon");
+            // back button click
+            if(backflag==1){
+                // canvas clear
+                Log.d("test123", "clear on");
+                canvas.drawColor(0, PorterDuff.Mode.CLEAR);
+            }
             // Detect Mode
             if (mFaces != null && mFaces.length > 0) {
                 mRect = new Rect();
@@ -107,42 +144,26 @@ public class FaceDetectorView extends View {
                     Log.d(TAG, "face info (" + face.rect.centerX() + "," + face.rect.centerY() + " / " + face.rect.top + " , " + face.rect.bottom + "," + face.rect.left + "," + face.rect.right + ")");
                     Log.d(TAG, "face info (" + face.rect.width() + "," + face.rect.height() + ")");
 
-                    canvas.drawText("Detect Face!", 20, 60, mTextPaint);
-                    //canvas.drawText("("+getWidth()/2+","+getHeight()/2+")",getWidth()/2,getHeight()/2,mTextPaint);
-
                     mRect = nomalizing(face.rect);
-                    mCurrRect = mRect;
 
-                    canvas.drawRect(mRect, mPaint);
-
-                    canvas.drawText("before : " + face.rect.top + "," + face.rect.bottom + "," + face.rect.left + "," + face.rect.right, 20, getWidth() * 4 / 3 - 80, mTextPaint);
-                    canvas.drawText("after : " + mRect.top + "," + mRect.bottom + "," + mRect.left + "," + mRect.right, 20, getWidth() * 4 / 3 - 40, mTextPaint);
-                }
+                    //canvas.drawRect(mRect, mPaint);
+ }
 
                 mFaces = null; // remove faces before new detect
             } else {
                 // canvas clear
                 canvas.drawColor(0, PorterDuff.Mode.CLEAR);
-                canvas.drawText("No Face", 20, 60, mTextPaint);
-                //Log.d(TAG,"passed faces is null");
             }
         }else if (mState == 0){
             // Drag Mode
-            canvas.drawText("Draging Mode", 20, 60, mTextPaint);
+            mFaceline = resizeBitmapImage(mFaceline, mRect);
 
-            mCurrRect = moving(mRect);
-            //mRect = mCurrRect;
+            Log.d("touchEvent", "Draw from " + mRect.width() + "," + mRect.height());
+            Log.d("touchEvent", "Draw to " + (mRect.width() + moffsetX) + "," + (mRect.height()+moffsetY));
 
-            Log.d("touchEvent", "Draw from " + mRect.centerX() + "," + mRect.centerY());
-            Log.d("touchEvent", "Draw to " + mCurrRect.centerX() + "," + mCurrRect.centerY());
-
-            canvas.drawText("before offset : " + mRect.top + "," + mRect.bottom + "," + mRect.left + "," + mRect.right, 20, getWidth() * 4 / 3 - 80, mTextPaint);
-            canvas.drawText("after offset : " + mCurrRect.top + "," + mCurrRect.bottom + "," + mCurrRect.left + "," + mCurrRect.right, 20, getWidth() * 4 / 3 - 40, mTextPaint);
-
-            canvas.drawRect(mCurrRect, mPaint);
+            canvas.drawBitmap(mFaceline,mRect.left+moffsetX,mRect.top+moffsetY,null);
         }
         super.onDraw(canvas);
-
     }
 
     public boolean onTouchEvent(MotionEvent event){
@@ -159,8 +180,8 @@ public class FaceDetectorView extends View {
                 break;
             case MotionEvent.ACTION_DOWN:
                 Log.d("touchEvent", "Down");
-                if (mCurrRect.contains((int)x,(int)y)==true) {
-                    mTracking = true;
+                if (mRect.contains((int)x,(int)y)==true) {
+                   mTracking = true;
                 }
                 break;
             case MotionEvent.ACTION_MOVE :
@@ -172,8 +193,6 @@ public class FaceDetectorView extends View {
 
                         mPaint.setColor(Color.YELLOW);
                         mPaint.setAlpha(128);
-
-                        mTextPaint.setColor(Color.YELLOW);
                     }
 
                     int length = event.getHistorySize();
@@ -188,5 +207,112 @@ public class FaceDetectorView extends View {
                 break;
         }
         return true;
+    }
+
+    //shutter click handling
+    public void setShutter(TextView textview, ImageButton shutter) {
+        text=textview;
+        shutterButton=shutter;
+
+        shutterButton.setOnClickListener(new OnClickListener() {
+            //클릭시 text change, string으로 해결
+            @Override
+            public void onClick(View v) {
+                text.setText(getResources().getString(R.string.shutter));
+                // mBottomView.setVisibility(View.GONE);
+                mShutterChange.setVisibility(View.VISIBLE);
+                mState = 0;
+                backflag = 0;
+            }
+        });
+    }
+
+    //Back button handling
+    public void setBack(ImageButton BackButton, RelativeLayout BackView){
+        Back = BackButton;
+        mBackView = BackView;
+
+        Back.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mBottomView.setVisibility(View.VISIBLE);
+                mShutterChange.setVisibility(View.GONE);
+                text.setText(getResources().getString(R.string.back));
+                mState=1;
+                backflag=1;
+                invalidate();
+            }
+        });
+
+        /*
+        Back.setOnClickListener(new () {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        mBackView.setBackgroundColor(Color.rgb(150, 91, 190));
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        mBackView.setBackgroundColor(Color.rgb(123, 63, 163));
+                        mBottomView.setVisibility(View.VISIBLE);
+                        mShutterChange.setVisibility(View.GONE);
+                        text.setText(getResources().getString(R.string.back));
+                        return true;
+                }
+                return false;
+            }
+        });*/
+    }
+
+    //Check button handling
+    public void setCheck(ImageButton CheckButton, RelativeLayout CheckView){
+        Check = CheckButton;
+        mCheckView=CheckView;
+
+        Check.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mState=1;
+                backflag=1;
+                invalidate();
+                mBottomView.setVisibility(View.VISIBLE);
+                mShutterChange.setVisibility(View.GONE);
+                mDoneView.setVisibility(View.VISIBLE);
+                text.setVisibility(View.GONE);
+            }
+        });
+        /*Check.setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        mCheckView.setBackgroundColor(Color.rgb(150,91,190));
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        mCheckView.setBackgroundColor(Color.rgb(91,28,133));
+                        mBottomView.setVisibility(View.VISIBLE);
+                        mShutterChange.setVisibility(View.GONE);
+                        mDoneView.setVisibility(View.VISIBLE);
+                        text.setVisibility(View.GONE);
+                        return true;
+                }
+                return false;
+            }
+        });*/
+    }
+
+    public void setDoneView(RelativeLayout view){
+        mDoneView = view;
+    }
+    public void setBottomView(RelativeLayout view){
+        mBottomView = view;
+    }
+
+    public void setShutterChange(RelativeLayout view){
+        mShutterChange=view;
+    }
+
+    public void setPreView(CameraPreview preView) {
+        mPreview = preView;
     }
 }

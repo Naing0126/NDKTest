@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merger version="3"><dataSet config="main"><source path="C:\Users\User\AndroidStudioProjects\NDKTest\openCVLibrary2411\src\main\assets"/></dataSet><dataSet config="debug"><source path="C:\Users\User\AndroidStudioProjects\NDKTest\openCVLibrary2411\src\debug\assets"/></dataSet></merger>
+<merger version="3"><dataSet config="main"><source path="D:\seerslab\NDKTest\openCVLibrary2411\src\main\assets"/></dataSet><dataSet config="debug"><source path="D:\seerslab\NDKTest\openCVLibrary2411\src\debug\assets"/></dataSet></merger>

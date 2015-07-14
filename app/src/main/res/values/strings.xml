@@ -3,4 +3,7 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="shutter">흰 선에 눈과 입이 맞도록 조정해주세요</string>
+    <string name="back">셔터를 눌러 사진을 촬영해주세요</string>
+    <string name="setting">좌표가 성공적으로 보정되었습니다</string>
 </resources>

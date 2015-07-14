@@ -6,6 +6,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageButton;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 
 public class MainActivity extends Activity {
@@ -13,18 +16,18 @@ public class MainActivity extends Activity {
 
     private CameraPreview mPreview;
     private FaceDetectorView mDetectView;
-/*
-    static{
-        try {
-            System.loadLibrary("NDKTest");
-            System.loadLibrary("opencv_java");
-        } catch (UnsatisfiedLinkError e){
-        }
-    }
+    private RelativeLayout mRelativeBottom;
+    private RelativeLayout mShutterChnage;
+    private RelativeLayout mDoneView;
+    private RelativeLayout mBackView;
+    private RelativeLayout mCheckView;
 
+    private TextView textview;
+    private ImageButton shutter;
 
-    public native int getMatHeight(int w, int h);
-*/
+    private ImageButton Back;
+    private ImageButton Check;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,12 +35,39 @@ public class MainActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
 
-//        TextView view = (TextView) findViewById(R.id.textView);
-//        view.setText("result is "+getMatHeight(50,10));
 
+        //View
         mPreview = (CameraPreview) findViewById(R.id.cameraPreview);
         mDetectView = (FaceDetectorView) findViewById(R.id.detectView);
+        mRelativeBottom = (RelativeLayout)findViewById(R.id.bottomlayout);
+        mShutterChnage = (RelativeLayout) findViewById(R.id.shutterchange);
+        mDoneView=(RelativeLayout)findViewById(R.id.donelayout);
+        mBackView=(RelativeLayout)findViewById(R.id.left);
+        mCheckView=(RelativeLayout)findViewById(R.id.right);
+
+        //Preview View setting
+        mPreview.setRelativeBottom(mRelativeBottom);
         mPreview.setDetectedView(mDetectView); // Previewø° Face Detector View ∞¥√º∏¶ ¿˙¿Â«ÿµ–¥Ÿ
+        mPreview.setShutterChange(mShutterChnage);
+
+        //Detector VIew setting
+        mDetectView.setShutterChange(mShutterChnage);
+        mDetectView.setBottomView(mRelativeBottom);
+        mDetectView.setPreView(mPreview);
+
+        //handling Shutter button event
+        textview = (TextView)findViewById(R.id.textview);
+        shutter = (ImageButton)findViewById(R.id.shutter);
+        mDetectView.setShutter(textview, shutter);
+
+        //handling bottom button event
+        Back = (ImageButton)findViewById(R.id.back);
+        Check =(ImageButton)findViewById(R.id.check);
+        mDetectView.setBack(Back,mBackView);
+        mDetectView.setCheck(Check,mCheckView);
+
+        //handling done layout
+        mDetectView.setDoneView(mDoneView);
     }
 
     @Override

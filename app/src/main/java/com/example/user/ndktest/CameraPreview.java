@@ -4,12 +4,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
-import android.media.FaceDetector;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -25,6 +24,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private Camera mCamera;
     private Activity mActivity;
     private FaceDetectorView mDetectedView;
+    private RelativeLayout mRelativeBottom;
+    private RelativeLayout mShutterChange;
 
     int FRONT = Camera.CameraInfo.CAMERA_FACING_FRONT;
     int BACK = Camera.CameraInfo.CAMERA_FACING_BACK;
@@ -53,20 +54,33 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             mCamera = null;
         }
     }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         // set surface view ratio to 3:4
         int width = resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec);
         int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
+        int tmp_height=0;
 
-        Log.d(TAG, "before : surface view's width " + width + " height " + height);
-
+        Log.d("sizeconfirm", "before : surface view's width " + width + " height " + height);
+        tmp_height=height;
         if(width * 4/3 < height) {
             height = (int) ((double) width * (double) 4 / 3);
         }else if(height * 3/4 < width){
             width = (int) ((double) width * (double) 4 / 3);
         }
-        Log.d(TAG, "after : surface view's width " + width + " height " + height);
+        Log.d("sizeconfirm1", "after : surface view's width " + width + " height " + height);
+
+        // layout size setting
+        tmp_height=tmp_height-height;
+        RelativeLayout.LayoutParams Bottom = (RelativeLayout.LayoutParams) mRelativeBottom.getLayoutParams();
+        Bottom.height = tmp_height;
+        mRelativeBottom.setLayoutParams(Bottom);
+
+        // layout size setting
+        RelativeLayout.LayoutParams Shutter = (RelativeLayout.LayoutParams) mShutterChange.getLayoutParams();
+        Shutter.height = tmp_height;
+        mShutterChange.setLayoutParams(Shutter);
 
         setMeasuredDimension(width, height);
     }
@@ -74,6 +88,14 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public void setDetectedView(FaceDetectorView view){
         mDetectedView = view;
         mDetectedView.setCamera(mCamera); // pass camera to detector view
+    }
+
+    public void setRelativeBottom(RelativeLayout view){
+        mRelativeBottom=view;
+    }
+
+    public void setShutterChange(RelativeLayout view){
+        mShutterChange=view;
     }
 
     @Override
