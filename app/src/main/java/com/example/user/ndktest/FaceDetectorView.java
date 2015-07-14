@@ -90,16 +90,16 @@ public class FaceDetectorView extends View {
             public void onPreviewFrame(byte[] data, Camera camera) {
                 if (mState == 0) { // Camera release in Drag Mode
                     mCamera.stopPreview();
-                    mCamera.release();
+                    //mCamera.release();
                     Log.d("test1234","camera"+mCamera);
                     //mCamera = null;
                 }
                 // back button click
-                if(backflag ==1){
+             /*   if(backflag ==1){
                     Log.d("test1234", "startpreview");
                     mCamera.startPreview();
                     mPreview.startFaceDetection();
-                }
+                }*/
             }
         });
     }
@@ -220,6 +220,7 @@ public class FaceDetectorView extends View {
             public void onClick(View v) {
                 text.setText(getResources().getString(R.string.shutter));
                 // mBottomView.setVisibility(View.GONE);
+                mCamera.stopPreview();
                 mShutterChange.setVisibility(View.VISIBLE);
                 mState = 0;
                 backflag = 0;
@@ -241,6 +242,11 @@ public class FaceDetectorView extends View {
                 mState=1;
                 backflag=1;
                 invalidate();
+                // restartpreview
+                Log.d("startpreview","start");
+                mCamera.startPreview();
+                Log.d("startpreview","finish ");
+
             }
         });
 
@@ -279,6 +285,11 @@ public class FaceDetectorView extends View {
                 mShutterChange.setVisibility(View.GONE);
                 mDoneView.setVisibility(View.VISIBLE);
                 text.setVisibility(View.GONE);
+
+                mCamera.stopPreview();
+                mCamera.release();
+                mCamera=null;
+                
             }
         });
         /*Check.setOnTouchListener(new OnTouchListener() {
